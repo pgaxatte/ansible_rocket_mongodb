@@ -1,11 +1,17 @@
 # Rocket.Chat mongodb -- Ubuntu 18.04 ansible role
 
+> This module is intended for educational purposes, do not use in production
+
 This ansible role is directly based on the official (non-working)
 [RocketChat ansible role](https://github.com/RocketChat/Rocket.Chat.Ansible).
 
 It deploys only the MongoDB server (see the [RocketChat server
 role](https://github.com/pgaxatte/ansible_rocket_server) for the actual server part) and only works on Ubuntu
 18.04.
+
+> :warning: *The default configuration is open on internet and without authentication*
+> Do not use without setting a user/password.
+> Use it at *your own risk*
 
 ## Role Variables
 
