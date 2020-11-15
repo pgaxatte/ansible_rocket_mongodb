@@ -1,0 +1,10 @@
+---
+rocket_chat_mongodb_packages:
+  - mongodb
+  - mongodb-server
+rocket_chat_mongodb_config: /etc/mongodb.conf
+
+rocket_chat_mongodb_repl_setname: 001-rs
+rocket_chat_mongodb_repl_lines: >-
+  replication:
+      replSetName:  "{{ rocket_chat_mongodb_repl_setname }}"

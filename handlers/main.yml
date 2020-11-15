@@ -1,0 +1,5 @@
+---
+- name: Restart the MongoDB service
+  service:
+    name: "{{ rocket_chat_mongodb_service_name }}"
+    state: restarted

@@ -1,0 +1,83 @@
+---
+- name: Ensure APT cache has been updated recently
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ((ansible_pkg_mgr | lower) == "apt")
+
+- name: "Configure /etc/hosts"
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}"
+    insertafter: "{{ item.insertafter | default(omit) }}"
+    insertbefore: "{{ item.insertbefore | default(omit) }}"
+    backrefs: "{{ item.backrefs | default(True) }}"
+  with_items:
+    - regexp: '^127\.0\.0\.1(.*){{ ansible_nodename }}(.*)'
+      line:   '127.0.0.1 \1 \2'
+    - regexp: '^127\.0\.0\.1(.*){{ ansible_hostname }}(.*)'
+      line:   '127.0.0.1 \1 \2'
+    - regexp: '^127\.0\.0\.1[ ]*([^ ].*)[ ]+localhost[ ]+([^ ].*)'
+      line:   '127.0.0.1    localhost \1 \2'
+    - regexp: '^127\.0\.1\.1'
+      line:   "127.0.1.1    {{ ansible_nodename }} {{ ansible_hostname }}"
+      insertafter: '^127\.0\.0\.1'
+      backrefs: no
+  register: hosts_change_result
+
+- name: Ensure MongoDB Server is installed
+  package:
+    name: "{{ rocket_chat_mongodb_packages }}"
+
+- name: Deploy MongoDB service configuration
+  template:
+    src: "{{ rocket_chat_mongodb_config_template }}"
+    dest: "{{ rocket_chat_mongodb_config }}"
+  notify: Restart the MongoDB service
+
+- meta: flush_handlers
+
+- name: Ensure the MongoDB service is started/enabled
+  service:
+    name: "{{ rocket_chat_mongodb_service_name }}"
+    state: started
+    enabled: yes
+
+- name: Wait for MongoDB to come online
+  wait_for:
+    port: "{{ rocket_chat_mongodb_port }}"
+    host: "{{ rocket_chat_mongodb_server }}"
+    state: started
+
+- name: Ensure the MongoDB replSets have been initiated
+  shell: >-
+    mongo --quiet --eval
+    'JSON.stringify(rs.initiate({_id:"{{ rocket_chat_mongodb_repl_setname }}",
+    members: [{"_id":1, "host":
+    "{{ rocket_chat_mongodb_server }}:{{ rocket_chat_mongodb_port }}"}]}))'
+  become: yes
+  become_user: "{{ rocket_chat_mongodb_service_user }}"
+  args:
+    executable: /bin/bash
+  register: replSet_result
+  changed_when:
+    - not (replSet_result.stdout is search(' Object'))
+    - ('ok' in (replSet_result.stdout | from_json))
+    - (((replSet_result.stdout | from_json).ok | int) == 1)
+
+- name: Reset replSet config when /etc/hosts changes
+  shell: >-
+     mongo --quiet --eval
+     'cfg = rs.conf();
+     cfg.members[0].host = "{{ ansible_nodename }}";
+     rs.reconfig(cfg, {force: true})'
+  become: yes
+  become_user: "{{ rocket_chat_mongodb_service_user }}"
+  when:
+    - (hosts_change_result is changed)
+    - ((replSet_result is undefined) or (not (replSet_result is changed)))
+  args:
+    executable: /bin/bash
+  notify:
+    - Restart the MongoDB service
