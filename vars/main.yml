@@ -1,4 +1,5 @@
 ---
+rocket_chat_mongodb_server_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
 rocket_chat_mongodb_packages:
   - mongodb
   - mongodb-server

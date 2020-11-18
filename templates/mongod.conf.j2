@@ -39,7 +39,8 @@ systemLog:
 # network interfaces
 net:
   port: {{ rocket_chat_mongodb_port }}
-  bindIp: {{ rocket_chat_mongodb_server }}
+  bindIp: 0.0.0.0
+  {# bindIp: {{ rocket_chat_mongodb_server_ip }} #}
 {% endif %}
 
 # replication

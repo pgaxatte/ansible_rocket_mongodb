@@ -2,11 +2,8 @@
 rocket_chat_mongodb_packages: mongodb
 rocket_chat_mongodb_service_name: mongodb
 rocket_chat_mongodb_service_user: mongodb
-rocket_chat_mongodb_server: 0.0.0.0
 rocket_chat_mongodb_port: 27017
 rocket_chat_mongodb_config: /etc/mongod.conf
 rocket_chat_mongodb_config_template: mongod.conf.j2
 rocket_chat_mongodb_database: rocketchat
 rocket_chat_mongodb_use_tls: false
-rocket_chat_mongodb_user: ~
-rocket_chat_mongodb_password: ~
